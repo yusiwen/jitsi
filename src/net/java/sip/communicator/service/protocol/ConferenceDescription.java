@@ -37,6 +37,11 @@ public class ConferenceDescription
     private String password;
 
     /**
+     * Whether the conference is available or not.
+     */
+    private boolean available;
+
+    /**
      * The transport methods supported for calling into the conference.
      *
      * If the set is empty, the intended interpretation is that there are no
@@ -82,7 +87,8 @@ public class ConferenceDescription
      * Gets the uri of this <tt>ConferenceDescription</tt>.
      * @return the uri of this <tt>ConferenceDescription</tt>.
      */
-    public String getUri() {
+    public String getUri()
+    {
         return uri;
     }
 
@@ -90,7 +96,8 @@ public class ConferenceDescription
      * Sets the uri of this <tt>ConferenceDescription</tt>.
      * @param uri the value to set
      */
-    public void setUri(String uri) {
+    public void setUri(String uri)
+    {
         this.uri = uri;
     }
 
@@ -98,7 +105,8 @@ public class ConferenceDescription
      * Gets the subject of this <tt>ConferenceDescription</tt>.
      * @return the subject of this <tt>ConferenceDescription</tt>.
      */
-    public String getSubject() {
+    public String getSubject()
+    {
         return subject;
     }
 
@@ -106,7 +114,8 @@ public class ConferenceDescription
      * Sets the subject of this <tt>ConferenceDescription</tt>.
      * @param subject the value to set
      */
-    public void setSubject(String subject) {
+    public void setSubject(String subject)
+    {
         this.subject = subject;
     }
 
@@ -114,7 +123,8 @@ public class ConferenceDescription
      * Gets the call ID of this <tt>ConferenceDescription</tt>
      * @return the call ID of this <tt>ConferenceDescription</tt>
      */
-    public String getCallId() {
+    public String getCallId()
+    {
         return callId;
     }
 
@@ -122,7 +132,8 @@ public class ConferenceDescription
      * Sets the call ID of this <tt>ConferenceDescription</tt>.
      * @param callId the value to set
      */
-    public void setCallId(String callId) {
+    public void setCallId(String callId)
+    {
         this.callId = callId;
     }
 
@@ -130,7 +141,8 @@ public class ConferenceDescription
      * Gets the password of this <tt>ConferenceDescription</tt>
      * @return the password of this <tt>ConferenceDescription</tt>
      */
-    public String getPassword() {
+    public String getPassword()
+    {
         return password;
     }
 
@@ -138,8 +150,27 @@ public class ConferenceDescription
      * Sets the auth of this <tt>ConferenceDescription</tt>.
      * @param password the value to set
      */
-    public void setPassword(String password) {
+    public void setPassword(String password)
+    {
         this.password = password;
+    }
+
+    /**
+     * Checks if the conference is available.
+     * @return <tt>true</tt> iff the conference is available.
+     */
+    public boolean isAvailable()
+    {
+        return available;
+    }
+
+    /**
+     * Sets the availability of this <tt>ConferenceDescription</tt>.
+     * @param available the value to set
+     */
+    public void setAvailable(boolean available)
+    {
+        this.available = available;
     }
 
     /**

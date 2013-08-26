@@ -53,6 +53,11 @@ public class ConferenceDescriptionPacketExtension
     public static final String CALLID_ATTR_NAME = "callid";
 
     /**
+     * The name of the "available" attribute.
+     */
+    public static final String AVAILABLE_ATTR_NAME = "available";
+
+    /**
      * Creates a new instance without any attributes or children.
      */
     public ConferenceDescriptionPacketExtension()
@@ -109,6 +114,7 @@ public class ConferenceDescriptionPacketExtension
     public ConferenceDescriptionPacketExtension(ConferenceDescription cd)
     {
         this(cd.getUri(), cd.getCallId(), cd.getPassword());
+        setAvailable(cd.isAvailable());
 
         Set<ConferenceDescription.Transport> transports
                 = cd.getSupportedTransports();
@@ -170,6 +176,23 @@ public class ConferenceDescriptionPacketExtension
     public void setAuth(String password)
     {
         setAttribute(PASSWORD_ATTR_NAME, password);
+    }
+
+    /**
+     * Sets the value of the "available" attribute.
+     * @param available the value to set
+     */
+    public void setAvailable(boolean available)
+    {
+       setAttribute(AVAILABLE_ATTR_NAME, available);
+    }
+
+    /**
+     * Gets the value of the "available" attribute.
+     */
+    public boolean isAvailable()
+    {
+        return Boolean.parseBoolean(getAttributeAsString(AVAILABLE_ATTR_NAME));
     }
 
     /**
