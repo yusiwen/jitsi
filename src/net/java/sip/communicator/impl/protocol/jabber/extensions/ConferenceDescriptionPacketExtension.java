@@ -87,7 +87,8 @@ public class ConferenceDescriptionPacketExtension
     }
 
     /**
-     * Creates a new instance and sets the "uri", "callid" and "password" attributes.
+     * Creates a new instance and sets the "uri", "callid" and "password"
+     * attributes.
      *
      * @param uri the value to use for the "uri" attribute.
      * @param callId the value to use for the "callid" attribute.
@@ -116,9 +117,8 @@ public class ConferenceDescriptionPacketExtension
         this(cd.getUri(), cd.getCallId(), cd.getPassword());
         setAvailable(cd.isAvailable());
 
-        Set<ConferenceDescription.Transport> transports
-                = cd.getSupportedTransports();
-        for(ConferenceDescription.Transport transport : transports)
+        Set<String> transports = cd.getSupportedTransports();
+        for(String transport : transports)
         {
             addChildExtension(new TransportPacketExtension(transport));
         }
@@ -196,39 +196,30 @@ public class ConferenceDescriptionPacketExtension
     }
 
     /**
+     * Adds a "transport" child element with the given value.
+     *
+     * @param transport the transport to add.
+     */
+    public void addTransport(String transport)
+    {
+        addChildExtension(new TransportPacketExtension(transport));
+    }
+
+    /**
      * A <tt>PacketExtension</tt> that represents a "transport" child element.
-     * It corresponds to a <tt>ConferenceDescription.Transport</tt>.
      */
     public static class TransportPacketExtension
         extends AbstractPacketExtension
     {
         /**
-         * The name of the "name" attribute.
-         */
-        public static final String NAME_ATTR_NAME = "name";
-
-        /**
-         * Creates a new instance and sets the "name" attribute to the
-         * <tt>String</tt> value of <tt>transport</tt>
+         * Creates a new instance and sets the XML namespace to
+         * <tt>transport</tt>
          *
-         * @param transport the <tt>ConferenceDescription.Transport</tt> to
-         * use to get set the "name" attribute.
+         * @param namespace the XML namespace of the "transport" element.
          */
-        public TransportPacketExtension(
-                ConferenceDescription.Transport transport)
+        public TransportPacketExtension(String namespace)
         {
-            this();
-
-            if (transport != null)
-                setAttribute(NAME_ATTR_NAME, transport.toString());
-        }
-
-        /**
-         * Creates a new instance.
-         */
-        public TransportPacketExtension()
-        {
-            super(null, TRANSPORT_ELEM_NAME);
+            super(namespace, TRANSPORT_ELEM_NAME);
         }
     }
 
@@ -276,17 +267,12 @@ public class ConferenceDescriptionPacketExtension
                     elementName = parser.getName();
                     if (TRANSPORT_ELEM_NAME.equals(elementName))
                     {
-                        String transportStr = parser.getAttributeValue(
-                                "",
-                                TransportPacketExtension.NAME_ATTR_NAME);
-                        ConferenceDescription.Transport transport =
-                                ConferenceDescription.Transport.
-                                        parseString(transportStr);
+                        String transportNs = parser.getNamespace();
 
-                        if (transport != null)
+                        if (transportNs != null)
                         {
                             transportExt
-                                    = new TransportPacketExtension(transport);
+                                    = new TransportPacketExtension(transportNs);
                         }
                     }
                     break;

@@ -44,11 +44,10 @@ public class ConferenceDescription
     /**
      * The transport methods supported for calling into the conference.
      *
-     * If the set is empty, the intended interpretation is that there are no
-     * restrictions on the supported transports (e.g. that all transports are
-     * supported).
+     * If the set is empty, the intended interpretation is that it is up to the
+     * caller to chose an appropriate transport.
      */
-    private Set<Transport> transports = new HashSet<Transport>();
+    private Set<String> transports = new HashSet<String>();
 
     /**
      * Creates a new instance with the specified <tt>uri</tt>, <tt>callId</tt>
@@ -178,19 +177,20 @@ public class ConferenceDescription
      * by the conference.
      * @param transport the <tt>Transport</tt> to add.
      */
-    public void addTransport(Transport transport)
+    public void addTransport(String transport)
     {
         transports.add(transport);
     }
 
     /**
      * Checks whether <tt>transport</tt> is supported by this
-     * <tt>ConferenceDescription</tt>.
+     * <tt>ConferenceDescription</tt>. If the set of transports for this
+     * <tt>ConferenceDescription</tt> is empty, always returns true.
      * @param transport the <tt>Transport</tt> to check.
      * @return <tt>true</tt> if <tt>transport</tt> is supported by this
      * <tt>ConferenceDescription</tt>
      */
-    public boolean supportsTransport(Transport transport)
+    public boolean supportsTransport(String transport)
     {
         /*
          * An empty list means that all transports are supported.
@@ -201,74 +201,11 @@ public class ConferenceDescription
     }
 
     /**
-     * Returns the set of <tt>Transport</tt>s supported by this
-     * <tt>ConferenceDescription</tt>
-     * @return the set of <tt>Transport</tt>s supported by this
-     * <tt>ConferenceDescription</tt>
+     * Returns the transports supported by this <tt>ConferenceDescription</tt>
+     * @return the supported by this <tt>ConferenceDescription</tt>
      */
-    public Set<Transport> getSupportedTransports()
+    public Set<String> getSupportedTransports()
     {
-        return new HashSet<Transport>(transports);
-    }
-
-    /**
-     * A list of possible transport methods that could be supported by a
-     * <tt>ConferenceDescription</tt>.
-     */
-    public static enum Transport
-    {
-        /**
-         * ICE.
-         */
-        ICE("ice"),
-
-        /**
-         * RAW UDP.
-         */
-        RAW_UDP("raw-udp");
-
-        /**
-         * The name of this <tt>Transport</tt>
-         */
-        private String name;
-
-        /**
-         * Creates a new instance.
-         *
-         * @param name the name of the new instance.
-         */
-        private Transport(String name)
-        {
-            this.name = name;
-        }
-
-        /**
-         * Returns the name of the instance.
-         * @return the name of the instance.
-         */
-        @Override
-        public String toString()
-        {
-            return name;
-        }
-
-        /**
-         * Parses a <tt>String</tt> and returns one of the instances defined
-         * in the enum, or <tt>null</tt> on failure to parse.
-         * @param str the <tt>String</tt> to parse.
-         * @return one of the instances of the enum or <tt>null</tt> on failure
-         * to parse.
-         */
-        public static Transport parseString(String str)
-        {
-            if (str == null)
-                return null;
-            else if (str.equals(ICE.toString()))
-                return ICE;
-            else if (str.equals(RAW_UDP.toString()))
-                return RAW_UDP;
-
-            return null;
-        }
+        return new HashSet<String>(transports);
     }
 }
