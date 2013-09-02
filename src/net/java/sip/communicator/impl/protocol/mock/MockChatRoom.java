@@ -16,7 +16,7 @@ import net.java.sip.communicator.service.protocol.event.*;
  * @author Damian Minkov
  */
 public class MockChatRoom
-    implements ChatRoom
+    extends AbstractChatRoom
 {
     private MockProvider provider;
 

@@ -83,6 +83,14 @@ public class ConferenceDescription
     }
 
     /**
+     * Creates a new instance.
+     */
+    public ConferenceDescription()
+    {
+        this(null, null, null);
+    }
+
+    /**
      * Gets the uri of this <tt>ConferenceDescription</tt>.
      * @return the uri of this <tt>ConferenceDescription</tt>.
      */
@@ -207,5 +215,14 @@ public class ConferenceDescription
     public Set<String> getSupportedTransports()
     {
         return new HashSet<String>(transports);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString()
+    {
+        return "ConferenceDescription(uri="+uri+"; callid="+callId+")";
     }
 }

@@ -541,4 +541,22 @@ public interface ChatRoom
      * @return the published conference
      */
     public ConferenceDescription publishConference(ConferenceDescription cd);
+
+    /**
+     * Adds a listener that will be notified when a member of this chat room
+     * has published a <tt>ConferenceDescription</tt> to the room.
+     *
+     * @param listener the listener to add.
+     */
+    public void addConferencePublishedListener(
+            ChatRoomConferencePublishedListener listener);
+
+    /**
+     * Removes a listener that was being notified when a member of this chat
+     * room had published a <tt>ConferenceDescription</tt> to the room.
+     *
+     * @param listener the listener to remove.
+     */
+    public void removeConferencePublishedListener(
+            ChatRoomConferencePublishedListener listener);
 }

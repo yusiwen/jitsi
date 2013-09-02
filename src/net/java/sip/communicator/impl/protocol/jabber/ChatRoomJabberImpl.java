@@ -33,7 +33,7 @@ import org.jivesoftware.smackx.packet.*;
  * @author Boris Grozev
  */
 public class ChatRoomJabberImpl
-    implements ChatRoom
+    extends AbstractChatRoom
 {
     /**
      * The logger of this class.
@@ -1639,32 +1639,44 @@ public class ChatRoomJabberImpl
      */
     public ConferenceDescription publishConference(ConferenceDescription cd)
     {
-        if(cd != publishedConference)
+        if (publishedConference != null
+                && cd == null)
         {
-            publishedConference = cd;
-            publishedConferenceExt
-                    = (cd == null)
-                    ? null
-                    : new ConferenceDescriptionPacketExtension(
-                    publishedConference);
-
+            cd = new ConferenceDescription();
+            cd.setAvailable(false);
+        }
+        if (cd != publishedConference)
+        {
+            ConferenceDescriptionPacketExtension ext
+                    = new ConferenceDescriptionPacketExtension(cd);
             if (lastPresenceSent != null)
             {
-                setConferenceDescriptionPacketExtension(
-                        lastPresenceSent,
-                        publishedConferenceExt);
-
+                setConferenceDescriptionPacketExtension(lastPresenceSent, ext);
                 provider.getConnection().sendPacket(lastPresenceSent);
             }
             else
             {
                 logger.warn("Could not publish conference," +
                         " lastPresenceSent is null.");
+                publishedConference = null;
+                publishedConferenceExt = null;
                 return null;
             }
+
+            /*
+             * Save the extensions to set to other outgoing Presence packets
+             */
+            publishedConference
+                    = (cd == null || !cd.isAvailable())
+                    ? null
+                    : cd;
+            publishedConferenceExt
+                    = (publishedConference == null)
+                    ? null
+                    : ext;
         }
 
-        return publishedConference;
+        return cd;
     }
 
     /**
@@ -2634,10 +2646,38 @@ public class ChatRoomJabberImpl
                     ConferenceDescriptionPacketExtension.NAMESPACE);
             if(presence.isAvailable() && ext != null)
             {
-                if (logger.isDebugEnabled())
-                logger.debug("Looks like " + presence.getFrom() + " has a"
-                        + " little conference going on. I guess we should"
-                        + " notify the GUI, or something. " + ext.toXML());
+                ConferenceDescriptionPacketExtension cdExt
+                        = (ConferenceDescriptionPacketExtension) ext;
+
+                ConferenceDescription cd = new ConferenceDescription(
+                        cdExt.getUri(),
+                        cdExt.getCallId(),
+                        cdExt.getPassword());
+                cd.setAvailable(cdExt.isAvailable());
+
+                String from = presence.getFrom();
+                String participantName = null;
+                if (from != null)
+                {
+                    participantName = StringUtils.parseResource(from);
+                }
+                ChatRoomMember member = members.get(participantName);
+
+                if (member != null)
+                {
+                    if (logger.isDebugEnabled())
+                        logger.debug("Received " + cd + " from " +
+                                participantName + "in " +
+                                multiUserChat.getRoom());
+
+                    fireConferencePublishedEvent(member, cd);
+                }
+                else
+                {
+                    logger.warn("Received a ConferenceDescription from an " +
+                            "unknown member ("+participantName+") in " +
+                            multiUserChat.getRoom());
+                }
             }
         }
 

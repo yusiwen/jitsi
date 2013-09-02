@@ -24,11 +24,13 @@ import net.java.sip.communicator.util.*;
  * @author Yana Stamcheva
  * @author Lubomir Marinov
  * @author Valentin Martinet
+ * @author Boris Grozev
  */
 public class ConferenceChatSession
     extends ChatSession
     implements  ChatRoomMemberPresenceListener,
-                ChatRoomPropertyChangeListener
+                ChatRoomPropertyChangeListener,
+                ChatRoomConferencePublishedListener
 {
     /**
      * The current chat transport used for messaging.
@@ -79,6 +81,7 @@ public class ConferenceChatSession
         ChatRoom chatRoom = chatRoomWrapper.getChatRoom();
         chatRoom.addMemberPresenceListener(this);
         chatRoom.addPropertyChangeListener(this);
+        chatRoom.addConferencePublishedListener(this);
     }
 
     /**
@@ -650,5 +653,52 @@ public class ConferenceChatSession
     public void addLocalUserRoleListener(ChatRoomLocalUserRoleListener l)
     {
         chatRoomWrapper.getChatRoom().addLocalUserRoleListener(l);
+    }
+
+    /**
+     * Acts upon a <tt>ChatRoomConferencePublishedEvent</tt>, dispatched when
+     * a member of a chat room publishes a <tt>ConferenceDescription</tt>.
+     *
+     * @param evt the event received, which contains the <tt>ChatRoom</tt>,
+     * <tt>ChatRoomMember</tt> and <tt>ConferenceDescription</tt> involved.
+     */
+    public void conferencePublished(final ChatRoomConferencePublishedEvent evt)
+    {
+        if(!SwingUtilities.isEventDispatchThread())
+        {
+            SwingUtilities.invokeLater(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    conferencePublished(evt);
+                }
+            });
+            return;
+        }
+
+        ChatRoom chatRoom = evt.getChatRoom();
+        ChatRoomMember chatRoomMember = evt.getMember();
+
+        // the event is not for our room
+        if(!chatRoom.equals(chatRoomWrapper.getChatRoom()))
+            return;
+
+        for (ChatContact<?> chatContact : chatParticipants)
+        {
+            if(chatContact.getDescriptor().equals(chatRoomMember))
+            {
+                /*
+                 * TODO: we want more things to happen, e.g. the
+                 * ConferenceDescription being added to a list in the GUI
+                 * TODO: i13ze the string, if we decide to keep it at all
+                 */
+                sessionRenderer.updateChatContactStatus(
+                        chatContact, "published a conference " +
+                        evt.getConferenceDescription());
+
+                break;
+            }
+        }
     }
 }

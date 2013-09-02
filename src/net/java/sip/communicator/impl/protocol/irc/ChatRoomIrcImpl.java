@@ -22,7 +22,7 @@ import net.java.sip.communicator.util.*;
  * @author Yana Stamcheva
  */
 public class ChatRoomIrcImpl
-    implements ChatRoom
+    extends AbstractChatRoom
 {
     /**
      * The object used for logging.
