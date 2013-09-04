@@ -156,6 +156,13 @@ public class JingleIQProvider implements IQProvider
                 TransferredPacketExtension.NAMESPACE,
                 new DefaultPacketExtensionProvider<TransferredPacketExtension>(
                         TransferredPacketExtension.class));
+
+        //conference description <callid/> provider
+        providerManager.addExtensionProvider(
+                ConferenceDescriptionPacketExtension.CALLID_ELEM_NAME,
+                ConferenceDescriptionPacketExtension.NAMESPACE,
+                new DefaultPacketExtensionProvider<CallIdPacketExtension>(
+                        CallIdPacketExtension.class));
     }
 
     /**

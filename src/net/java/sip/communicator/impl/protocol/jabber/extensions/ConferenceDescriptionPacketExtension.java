@@ -53,6 +53,11 @@ public class ConferenceDescriptionPacketExtension
     public static final String CALLID_ATTR_NAME = "callid";
 
     /**
+     * The name of the "callid" element.
+     */
+    public static final String CALLID_ELEM_NAME = "callid";
+
+    /**
      * The name of the "available" attribute.
      */
     public static final String AVAILABLE_ATTR_NAME = "available";
