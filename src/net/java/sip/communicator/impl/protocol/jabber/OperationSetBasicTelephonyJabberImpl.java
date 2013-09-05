@@ -8,6 +8,7 @@ package net.java.sip.communicator.impl.protocol.jabber;
 
 import java.util.*;
 
+import net.java.sip.communicator.impl.protocol.jabber.extensions.*;
 import net.java.sip.communicator.impl.protocol.jabber.extensions.gtalk.*;
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jingle.*;
 import net.java.sip.communicator.service.protocol.*;
@@ -32,6 +33,7 @@ import org.jivesoftware.smackx.packet.*;
  * @author Symphorien Wanko
  * @author Lyubomir Marinov
  * @author Sebastien Vincent
+ * @author Boris Grozev
  */
 public class OperationSetBasicTelephonyJabberImpl
    extends AbstractOperationSetBasicTelephony<ProtocolProviderServiceJabberImpl>
@@ -166,6 +168,50 @@ public class OperationSetBasicTelephonyJabberImpl
                 callOfCallPeer.setConference(conference);
             return callOfCallPeer;
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Creates a new <tt>CallJabberImpl</tt> and initiates a jingle session
+     * to the JID obtained from the <tt>uri</tt> of <tt>cd</tt>.
+     *
+     * If <tt>cd</tt> contains a <tt>callid</tt>, adds the "callid" element as
+     * an extension to the session-initiate IQ.
+     *
+     * Uses the supported transports of <tt>cd</tt>
+     */
+    @Override public CallJabberImpl
+        createCall(ConferenceDescription cd)
+        throws OperationFailedException
+    {
+        CallJabberImpl call = new CallJabberImpl(this);
+
+        String remoteJid = cd.getUri();
+        if (remoteJid.startsWith("xmpp:"))
+            remoteJid = remoteJid.substring(5, remoteJid.length());
+
+        List<PacketExtension> sessionInitiateExtensions
+                = new ArrayList<PacketExtension>(2);
+
+        String callid = cd.getCallId();
+        if (callid != null)
+        {
+            sessionInitiateExtensions.add(new CallIdPacketExtension(callid));
+        }
+
+        //String password = cd.getPassword();
+        //if (password != null)
+        //{
+        //   extensions.add(new PasswordPacketExtension(password));
+        //}
+
+        CallPeerJabberImpl callPeer = call.initiateSession(
+                remoteJid,
+                null,
+                sessionInitiateExtensions,
+                cd.getSupportedTransports());
+        return call;
     }
 
     /**
@@ -421,7 +467,8 @@ public class OperationSetBasicTelephonyJabberImpl
                     = call.initiateSession(
                             fullCalleeURI,
                             di,
-                            sessionInitiateExtensions);
+                            sessionInitiateExtensions,
+                            null);
             }
         }
         catch (Throwable t)

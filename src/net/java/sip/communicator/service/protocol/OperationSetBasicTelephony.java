@@ -193,6 +193,19 @@ public interface OperationSetBasicTelephony<T extends ProtocolProviderService>
         throws OperationFailedException;
 
     /**
+     * Creates a new <tt>Call</tt> and sends an invite to the conference
+     * described in <tt>cd</tt>. A <tt>CallPeer</tt> corresponding the
+     * <tt>cd</tt> will be created and added to the returned <tt>Call</tt>
+     *
+     * @param cd the conference to send an invite to
+     *
+     * @return a newly created <tt>Call</tt>, to which a <tt>CallPeer</tt>
+     * corresponding to <tt>cd</tt> has been added.
+     */
+    public Call createCall(ConferenceDescription cd)
+        throws OperationFailedException;
+
+    /**
      * Indicates a user request to answer an incoming call from the specified
      * CallPeer.
      * @param peer the call peer that we'd like to answer.
