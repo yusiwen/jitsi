@@ -1112,6 +1112,11 @@ public class OperationSetBasicTelephonyJabberImpl
                     jingleIQ.getExtension(
                             TransferPacketExtension.ELEMENT_NAME,
                             TransferPacketExtension.NAMESPACE);
+            CallIdPacketExtension callidExt
+                = (CallIdPacketExtension)
+                    jingleIQ.getExtension(
+                        ConferenceDescriptionPacketExtension.CALLID_ELEM_NAME,
+                        ConferenceDescriptionPacketExtension.NAMESPACE);
             CallJabberImpl call = null;
 
             if (transfer != null)
@@ -1140,6 +1145,19 @@ public class OperationSetBasicTelephonyJabberImpl
                     }
                 }
             }
+
+            if (callidExt != null)
+            {
+                String callid = callidExt.getText();
+
+                if (callid != null)
+                    call = getActiveCallsRepository().findCallId(callid);
+            }
+
+            if (transfer != null && callidExt != null)
+                logger.warn("Received a session-initiate with both 'transfer'" +
+                        " and 'callid' extensions. Ignored 'transfer' and" +
+                        " used 'callid'.");
 
             if(call == null)
                 call = new CallJabberImpl(this);
