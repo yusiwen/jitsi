@@ -22,9 +22,17 @@ public class CallIdPacketExtension
      */
     public CallIdPacketExtension(String callid)
     {
-        super(ConferenceDescriptionPacketExtension.NAMESPACE,
-              ConferenceDescriptionPacketExtension.CALLID_ELEM_NAME);
+        this();
 
         setText(callid);
+    }
+
+    /**
+     * Creates a new instance.
+     */
+    public CallIdPacketExtension()
+    {
+        super(ConferenceDescriptionPacketExtension.NAMESPACE,
+                ConferenceDescriptionPacketExtension.CALLID_ELEM_NAME);
     }
 }
