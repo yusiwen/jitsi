@@ -2630,8 +2630,6 @@ public class ChatRoomJabberImpl
                         setLocalUserRole(jitsiRole);
                     }
                 }
-
-                provider.getConnection().removePacketListener(this);
             }
         }
 
