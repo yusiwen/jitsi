@@ -39,7 +39,7 @@ public class ConferenceDescription
     /**
      * Whether the conference is available or not.
      */
-    private boolean available;
+    private boolean available = true;
 
     /**
      * The transport methods supported for calling into the conference.
