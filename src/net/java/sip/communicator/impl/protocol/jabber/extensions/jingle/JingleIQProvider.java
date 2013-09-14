@@ -207,6 +207,9 @@ public class JingleIQProvider implements IQProvider
         DefaultPacketExtensionProvider<CoinPacketExtension> coinProvider
             = new DefaultPacketExtensionProvider<CoinPacketExtension>(
                     CoinPacketExtension.class);
+        DefaultPacketExtensionProvider<CallIdPacketExtension> callidProvider
+            = new DefaultPacketExtensionProvider<CallIdPacketExtension>(
+                    CallIdPacketExtension.class);
 
         // Now go on and parse the jingle element's content.
         int eventType;
@@ -246,6 +249,11 @@ public class JingleIQProvider implements IQProvider
                 else if(elementName.equals(CoinPacketExtension.ELEMENT_NAME))
                 {
                     jingleIQ.addExtension(coinProvider.parseExtension(parser));
+                }
+                else if (elementName.equals(
+                        ConferenceDescriptionPacketExtension.CALLID_ELEM_NAME))
+                {
+                    jingleIQ.addExtension(callidProvider.parseExtension(parser));
                 }
 
                 //<mute/> <active/> and other session-info elements
