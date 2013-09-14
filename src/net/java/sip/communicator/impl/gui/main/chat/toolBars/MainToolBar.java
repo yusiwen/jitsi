@@ -119,6 +119,13 @@ public class MainToolBar
                     ImageLoader.getImage(ImageLoader.CHAT_CONFIGURE_ICON));
 
     /**
+     * The "create conference" button.
+     */
+    private final ChatToolbarButton createConferenceButton
+            = new ChatToolbarButton(
+                    ImageLoader.getImage(ImageLoader.CONFERENCE_ICON));
+
+    /**
      * The desktop sharing button.
      */
     private final ChatToolbarButton desktopSharingButton
@@ -194,6 +201,7 @@ public class MainToolBar
         this.add(callVideoButton);
         this.add(desktopSharingButton);
         this.add(sendFileButton);
+        this.add(createConferenceButton);
 
         ChatPanel chatPanel = chatContainer.getCurrentChat();
         if (chatPanel == null
@@ -269,6 +277,11 @@ public class MainToolBar
         this.sendFileButton.setToolTipText(
             GuiActivator.getResources().getI18NString("service.gui.SEND_FILE"));
 
+        this.createConferenceButton.setName("createConference");
+        this.createConferenceButton.setToolTipText(
+                GuiActivator.getResources()
+                        .getI18NString("service.gui.CREATE_CONFERENCE_CALL"));
+
         this.previousButton.setName("previous");
         this.previousButton.setToolTipText(
             GuiActivator.getResources().getI18NString("service.gui.PREVIOUS"));
@@ -284,6 +297,7 @@ public class MainToolBar
         desktopSharingButton.addActionListener(this);
         optionsButton.addActionListener(this);
         sendFileButton.addActionListener(this);
+        createConferenceButton.addActionListener(this);
         previousButton.addActionListener(this);
         nextButton.addActionListener(this);
     }
@@ -338,6 +352,9 @@ public class MainToolBar
 
             leaveChatRoomButton.setEnabled(
                 chatPanel.chatSession instanceof ConferenceChatSession);
+
+            createConferenceButton.setEnabled(
+                    chatPanel.chatSession instanceof ConferenceChatSession);
 
             inviteButton.setEnabled(
                 chatPanel.findInviteChatTransport() != null);
@@ -489,6 +506,34 @@ public class MainToolBar
         }
         else if (buttonText.equals("font"))
             chatPanel.showFontChooserDialog();
+        else if (buttonText.equals("createConference"))
+        {
+            Object o = chatSession.getDescriptor();
+            ChatRoom chatRoom = null;
+            if (o instanceof ChatRoomWrapper)
+                chatRoom = ((ChatRoomWrapper)o).getChatRoom();
+
+            if (chatRoom == null)
+            {
+                // TODO: show an error
+                return;
+            }
+
+            OperationSetTelephonyConferencing telephonyConferencing
+                    = chatRoom.getParentProvider().getOperationSet(
+                        OperationSetTelephonyConferencing.class);
+
+            ConferenceDescription cd = null;
+            if (telephonyConferencing != null)
+            {
+                cd = telephonyConferencing.setupConference(chatRoom);
+            }
+
+            if (cd != null)
+            {
+                chatRoom.publishConference(cd);
+            }
+        }
     }
 
     /**
@@ -583,6 +628,9 @@ public class MainToolBar
 
         sendFileButton.setIconImage(ImageLoader.getImage(
                 ImageLoader.SEND_FILE_ICON));
+
+        createConferenceButton.setIconImage(ImageLoader.getImage(
+                ImageLoader.CONFERENCE_ICON));
 
         fontButton.setIconImage(ImageLoader.getImage(
                 ImageLoader.FONT_ICON));

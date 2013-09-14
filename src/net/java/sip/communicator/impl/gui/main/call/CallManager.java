@@ -2205,7 +2205,11 @@ public class CallManager
                     contact = null;
                 }
 
-                stringContact = PhoneNumberI18nService.normalize(stringContact);
+                if (stringContact != null)
+                {
+                    stringContact
+                            = PhoneNumberI18nService.normalize(stringContact);
+                }
             }
 
             try
