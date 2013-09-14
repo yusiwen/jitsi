@@ -696,6 +696,8 @@ public class ConferenceChatSession
                 sessionRenderer.updateChatContactStatus(
                         chatContact, "published a conference " +
                         evt.getConferenceDescription());
+                chatRoomMember.
+                        setConferenceDescription(evt.getConferenceDescription());
 
                 break;
             }

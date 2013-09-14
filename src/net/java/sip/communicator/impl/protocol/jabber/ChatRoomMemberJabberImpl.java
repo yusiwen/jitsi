@@ -52,6 +52,12 @@ public class ChatRoomMemberJabberImpl
     private byte[] avatar;
 
     /**
+     * The <tt>ConferenceDescription</tt> published by this
+     * <tt>ChatRoomMember</tt>
+     */
+    private ConferenceDescription conferenceDescription = null;
+
+    /**
      * Creates a jabber chat room member with the specified containing chat
      * room parent.
      * @param containingChatRoom the room that this
@@ -234,4 +240,21 @@ public class ChatRoomMemberJabberImpl
      {
          this.contact = contact;
      }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ConferenceDescription getConferenceDescription()
+    {
+        return conferenceDescription;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setConferenceDescription(ConferenceDescription cd)
+    {
+        conferenceDescription = cd;
+    }
 }
