@@ -1172,6 +1172,12 @@ public class ImageLoader
     public static final ImageID FONT_ICON
         = new ImageID("service.gui.icons.FONT_ICON");
 
+    /**
+     * Invite to conference icon
+     */
+    public static final ImageID CONFERENCE_ICON
+        = new ImageID("service.gui.icons.CONFERENCE_CALL");
+
     /*
      * =======================================================================
      * ------------------------ CHAT CONTACT ICONS ---------------------------
