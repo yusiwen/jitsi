@@ -126,6 +126,11 @@ public class CallPeerMediaHandlerJabberImpl
     private String[] supportedTransports = null;
 
     /**
+     * Object used to synchronize access to <tt>supportedTransports</tt>
+     */
+    private final Object supportedTransportsSyncRoot = new Object();
+
+    /**
      * Creates a new handler that will be managing media streams for
      * <tt>peer</tt>.
      *
@@ -902,7 +907,7 @@ public class CallPeerMediaHandlerJabberImpl
                  * transport in the list which we recognize (e.g. the first
                  * that is either ice or raw-udp
                  */
-                synchronized (supportedTransports)
+                synchronized (supportedTransportsSyncRoot)
                 {
                     if (supportedTransports != null
                             && supportedTransports.length > 0)
@@ -2243,7 +2248,7 @@ public class CallPeerMediaHandlerJabberImpl
 
         if (size > 0)
         {
-            synchronized (supportedTransports)
+            synchronized (supportedTransportsSyncRoot)
             {
                 supportedTransports = new String[size];
                 int i = 0;
