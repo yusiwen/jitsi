@@ -211,6 +211,26 @@ public class ConferenceDescriptionPacketExtension
     }
 
     /**
+     * Creates a <tt>ConferenceDescription</tt> corresponding to this
+     * <tt>ConferenceDescriptionPacketExtension</tt>
+     * @return a <tt>ConferenceDescription</tt> corresponding to this
+     * <tt>ConferenceDescriptionPacketExtension</tt>
+     */
+    public ConferenceDescription toConferenceDescription()
+    {
+        ConferenceDescription conferenceDescription
+                = new ConferenceDescription(getUri(), getCallId(), getPassword());
+        conferenceDescription.setAvailable(isAvailable());
+        for (TransportPacketExtension t
+                : getChildExtensionsOfType(TransportPacketExtension.class))
+        {
+            conferenceDescription.addTransport(t.getNamespace());
+        }
+
+        return conferenceDescription;
+    }
+
+    /**
      * A <tt>PacketExtension</tt> that represents a "transport" child element.
      */
     public static class TransportPacketExtension

@@ -2649,11 +2649,7 @@ public class ChatRoomJabberImpl
                 ConferenceDescriptionPacketExtension cdExt
                         = (ConferenceDescriptionPacketExtension) ext;
 
-                ConferenceDescription cd = new ConferenceDescription(
-                        cdExt.getUri(),
-                        cdExt.getCallId(),
-                        cdExt.getPassword());
-                cd.setAvailable(cdExt.isAvailable());
+                ConferenceDescription cd = cdExt.toConferenceDescription();
 
                 String from = presence.getFrom();
                 String participantName = null;
