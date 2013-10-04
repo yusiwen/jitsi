@@ -764,4 +764,28 @@ public class MockChatRoom
     {
         return null;
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Not implemented.
+     */
+    @Override
+    public ConferenceDescription findCachedConferenceDescription(
+        String memberName)
+    {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Not implemented.
+     */
+    @Override
+    public ConferenceDescription removeCachedConferenceDescription(
+        String memberName)
+    {
+        return null;
+    }
 }

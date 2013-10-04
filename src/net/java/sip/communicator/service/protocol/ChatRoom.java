@@ -559,4 +559,26 @@ public interface ChatRoom
      */
     public void removeConferencePublishedListener(
             ChatRoomConferencePublishedListener listener);
+    
+    /**
+     * Finds <tt>ConferenceDescription</tt> instance that was published by 
+     * specified member from the list of cached <tt>ConferenceDescription</tt> 
+     * instances.
+     * 
+     * @param memberName the name of the member.
+     * @return the <tt>ConferenceDescription</tt> instance
+     */
+    public ConferenceDescription findCachedConferenceDescription(
+        String memberName);
+    
+    /**
+     * Removes <tt>ConferenceDescription</tt> instance that was published by 
+     * specified member from the list of cached <tt>ConferenceDescription</tt> 
+     * instances.
+     * 
+     * @param memberName the name of the member.
+     * @return the <tt>ConferenceDescription</tt> instance that was removed.
+     */
+    public ConferenceDescription removeCachedConferenceDescription(
+        String memberName);
 }

@@ -88,6 +88,8 @@ public class ChatPanel
     private final ChatWritePanel writeMessagePanel;
 
     private ChatRoomMemberListPanel chatContactListPanel;
+    
+    private ChatRoomConferenceCallsListPanel chatConferenceListPanel;
 
     private final ChatContainer chatContainer;
 
@@ -223,13 +225,27 @@ public class ChatPanel
 
             TransparentPanel rightPanel
                 = new TransparentPanel(new BorderLayout());
-            Dimension chatContactPanelSize = new Dimension(150, 100);
-            rightPanel.setMinimumSize(chatContactPanelSize);
-            rightPanel.setPreferredSize(chatContactPanelSize);
+            Dimension chatListsPanelSize = new Dimension(150, 100);
+            Dimension rightPanelSize = new Dimension(150, 200);
+            rightPanel.setMinimumSize(rightPanelSize);
+            rightPanel.setPreferredSize(rightPanelSize);
 
+            TransparentPanel contactsPanel
+                = new TransparentPanel(new BorderLayout());
+            contactsPanel.setMinimumSize(chatListsPanelSize);
+            contactsPanel.setPreferredSize(chatListsPanelSize);
+            TransparentPanel conferencePanel
+                = new TransparentPanel(new BorderLayout());
+            conferencePanel.setMinimumSize(chatListsPanelSize);
+            conferencePanel.setPreferredSize(chatListsPanelSize);
+            
             this.chatContactListPanel = new ChatRoomMemberListPanel(this);
             this.chatContactListPanel.setOpaque(false);
-
+            
+            this.chatConferenceListPanel 
+                = new ChatRoomConferenceCallsListPanel(this);
+            this.chatConferenceListPanel.setOpaque(false);
+            this.chatConferenceListPanel.initConferences();
             topSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
             topSplitPane.setBorder(null); // remove default borders
             topSplitPane.setOneTouchExpandable(true);
@@ -264,13 +280,37 @@ public class ChatPanel
 
             localUserLabelPanel.add(localUserLabel, BorderLayout.CENTER);
             localUserLabelPanel.setBackground(msgNameBackground);
+            
+            
+            JPanel conferencesLabelPanel = new JPanel(new BorderLayout());
+            JLabel conferencesLabel 
+                = new JLabel(
+                    GuiActivator.getResources()
+                        .getI18NString("service.gui.CHAT_CONFERENCE_LABEL"));
 
-            rightPanel.add(localUserLabelPanel, BorderLayout.NORTH);
-            rightPanel.add(chatContactListPanel, BorderLayout.CENTER);
+            conferencesLabel.setFont(
+                localUserLabel.getFont().deriveFont(Font.BOLD));
+            conferencesLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            conferencesLabel.setBorder(
+                            BorderFactory.createEmptyBorder(2, 0, 3, 0));
+            conferencesLabel.setForeground(
+                Color.decode(ChatHtmlUtils.MSG_IN_NAME_FOREGROUND));
 
+            conferencesLabelPanel.add(conferencesLabel, BorderLayout.CENTER);
+            conferencesLabelPanel.setBackground(msgNameBackground);
+            
+            contactsPanel.add(localUserLabelPanel, BorderLayout.NORTH);
+            contactsPanel.add(chatContactListPanel, BorderLayout.CENTER);
+            
+            conferencePanel.add(conferencesLabelPanel, BorderLayout.NORTH);
+            conferencePanel.add(chatConferenceListPanel, BorderLayout.CENTER);
+            
+            rightPanel.add(conferencePanel, BorderLayout.NORTH);
+            rightPanel.add(contactsPanel, BorderLayout.CENTER);
+            
             topSplitPane.setLeftComponent(conversationPanelContainer);
             topSplitPane.setRightComponent(rightPanel);
-
+            
             topPanel.add(topSplitPane);
         }
         else
@@ -2221,6 +2261,29 @@ public class ChatPanel
     {
         if (chatContactListPanel != null)
             chatContactListPanel.removeContact(chatContact);
+    }
+    
+    /**
+     * Adds the given <tt>conferenceDescription</tt> to the list of chat 
+     * conferences in this chat panel chat.
+     * @param conferenceDescription the conference to add.
+     */
+    @Override
+    public void addChatConferenceCall(
+        ConferenceDescription conferenceDescription)
+    {
+        chatConferenceListPanel.addConference(conferenceDescription);
+    }
+
+    /**
+     * Removes the given <tt>conferenceDescription</tt> from the list of chat 
+     * conferences in this chat panel chat.
+     * @param conferenceDescription the conference to remove.
+     */
+    @Override
+    public void removeChatConferenceCall(ConferenceDescription cd)
+    {
+        chatConferenceListPanel.removeConference(cd);
     }
 
     /**

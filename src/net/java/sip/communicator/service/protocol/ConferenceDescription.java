@@ -35,7 +35,11 @@ public class ConferenceDescription
      * The password to use to call into the conference.
      */
     private String password;
-
+    
+    /**
+     * The name of the conference.
+     */
+    private String displayName;
     /**
      * Whether the conference is available or not.
      */
@@ -88,6 +92,24 @@ public class ConferenceDescription
     public ConferenceDescription()
     {
         this(null, null, null);
+    }
+
+    /**
+     * Returns the display name of the conference.
+     * @return the display name
+     */
+    public String getDisplayName()
+    {
+        return displayName;
+    }
+
+    /**
+     * Sets the display name of the conference.
+     * @param displayName the display name to set
+     */
+    public void setDisplayName(String displayName)
+    {
+        this.displayName = displayName;
     }
 
     /**
@@ -224,5 +246,22 @@ public class ConferenceDescription
     public String toString()
     {
         return "ConferenceDescription(uri="+uri+"; callid="+callId+")";
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+            return true;
+
+        if (!getClass().isInstance(obj))
+            return false;
+
+        ConferenceDescription cd = (ConferenceDescription) obj;
+
+        return getCallId().equals(cd.callId);
     }
 }

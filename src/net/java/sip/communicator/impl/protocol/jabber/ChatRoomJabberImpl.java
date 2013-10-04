@@ -159,6 +159,13 @@ public class ChatRoomJabberImpl
     private Presence lastPresenceSent = null;
 
     /**
+     * The list of all <tt>ConferenceDescription</tt> that were announced and 
+     * are not yet processed.
+     */
+    private Map<String, ConferenceDescription> cachedConferenceDescriptions
+        = new HashMap<String, ConferenceDescription>();
+
+    /**
      * Creates an instance of a chat room that has been.
      *
      * @param multiUserChat MultiUserChat
@@ -1489,6 +1496,34 @@ public class ChatRoomJabberImpl
     }
 
     /**
+     * Finds <tt>ConferenceDescription</tt> instance that was published by 
+     * specified member from the list of cached <tt>ConferenceDescription</tt> 
+     * instances.
+     * 
+     * @param memberName the name of the member.
+     * @return the <tt>ConferenceDescription</tt> instance
+     */
+    public synchronized ConferenceDescription findCachedConferenceDescription(
+        String memberName)
+    {
+        return cachedConferenceDescriptions.get(memberName);
+    }
+
+    /**
+     * Removes <tt>ConferenceDescription</tt> instance that was published by 
+     * specified member from the list of cached <tt>ConferenceDescription</tt> 
+     * instances.
+     * 
+     * @param memberName the name of the member.
+     * @return the <tt>ConferenceDescription</tt> instance that was removed.
+     */
+    public synchronized ConferenceDescription removeCachedConferenceDescription(
+        String memberName)
+    {
+        return cachedConferenceDescriptions.remove(memberName);
+    }
+
+    /**
      * Creates the corresponding ChatRoomMemberPresenceChangeEvent and notifies
      * all <tt>ChatRoomMemberPresenceListener</tt>s that a ChatRoomMember has
      * joined or left this <tt>ChatRoom</tt>.
@@ -1639,42 +1674,41 @@ public class ChatRoomJabberImpl
      */
     public ConferenceDescription publishConference(ConferenceDescription cd)
     {
-        if (publishedConference != null
-                && cd == null)
+        if (publishedConference != null)
         {
-            cd = new ConferenceDescription();
+            cd = publishedConference;
             cd.setAvailable(false);
         }
-        if (cd != publishedConference)
+        
+        cd.setDisplayName(nickname);
+        
+        ConferenceDescriptionPacketExtension ext
+                = new ConferenceDescriptionPacketExtension(cd);
+        if (lastPresenceSent != null)
         {
-            ConferenceDescriptionPacketExtension ext
-                    = new ConferenceDescriptionPacketExtension(cd);
-            if (lastPresenceSent != null)
-            {
-                setConferenceDescriptionPacketExtension(lastPresenceSent, ext);
-                provider.getConnection().sendPacket(lastPresenceSent);
-            }
-            else
-            {
-                logger.warn("Could not publish conference," +
-                        " lastPresenceSent is null.");
-                publishedConference = null;
-                publishedConferenceExt = null;
-                return null;
-            }
-
-            /*
-             * Save the extensions to set to other outgoing Presence packets
-             */
-            publishedConference
-                    = (cd == null || !cd.isAvailable())
-                    ? null
-                    : cd;
-            publishedConferenceExt
-                    = (publishedConference == null)
-                    ? null
-                    : ext;
+            setConferenceDescriptionPacketExtension(lastPresenceSent, ext);
+            provider.getConnection().sendPacket(lastPresenceSent);
         }
+        else
+        {
+            logger.warn("Could not publish conference," +
+                    " lastPresenceSent is null.");
+            publishedConference = null;
+            publishedConferenceExt = null;
+            return null;
+        }
+
+        /*
+         * Save the extensions to set to other outgoing Presence packets
+         */
+        publishedConference
+                = (cd == null || !cd.isAvailable())
+                ? null
+                : cd;
+        publishedConferenceExt
+                = (publishedConference == null)
+                ? null
+                : ext;
 
         return cd;
     }
@@ -2657,6 +2691,7 @@ public class ChatRoomJabberImpl
                 }
                 ChatRoomMember member = members.get(participantName);
 
+                cachedConferenceDescriptions.put(participantName, cd);
                 if (member != null)
                 {
                     if (logger.isDebugEnabled())

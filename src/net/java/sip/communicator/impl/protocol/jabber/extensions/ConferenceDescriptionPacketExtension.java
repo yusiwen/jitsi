@@ -61,6 +61,11 @@ public class ConferenceDescriptionPacketExtension
      * The name of the "available" attribute.
      */
     public static final String AVAILABLE_ATTR_NAME = "available";
+    
+    /**
+     * The name of the conference name attribute.
+     */
+    public static final String CONFERENCE_NAME_ATTR_NAME = "conference_name";
 
     /**
      * Creates a new instance without any attributes or children.
@@ -121,6 +126,8 @@ public class ConferenceDescriptionPacketExtension
     {
         this(cd.getUri(), cd.getCallId(), cd.getPassword());
         setAvailable(cd.isAvailable());
+        if(cd.getDisplayName() != null)
+            setName(cd.getDisplayName());
 
         Set<String> transports = cd.getSupportedTransports();
         for(String transport : transports)
@@ -191,6 +198,15 @@ public class ConferenceDescriptionPacketExtension
     {
        setAttribute(AVAILABLE_ATTR_NAME, available);
     }
+    
+    /**
+     * Sets the value of the "available" attribute.
+     * @param available the value to set
+     */
+    public void setName(String name)
+    {
+       setAttribute(CONFERENCE_NAME_ATTR_NAME, name);
+    }
 
     /**
      * Gets the value of the "available" attribute.
@@ -221,6 +237,7 @@ public class ConferenceDescriptionPacketExtension
         ConferenceDescription conferenceDescription
                 = new ConferenceDescription(getUri(), getCallId(), getPassword());
         conferenceDescription.setAvailable(isAvailable());
+        conferenceDescription.setDisplayName(getName());
         for (TransportPacketExtension t
                 : getChildExtensionsOfType(TransportPacketExtension.class))
         {
@@ -228,6 +245,15 @@ public class ConferenceDescriptionPacketExtension
         }
 
         return conferenceDescription;
+    }
+
+    /**
+     * Returns the value of the <tt>CONFERENCE_NAME_ATTR_NAME</tt> attribute.
+     * @return the name of the conference.
+     */
+    private String getName()
+    {
+        return getAttributeAsString(CONFERENCE_NAME_ATTR_NAME);
     }
 
     /**

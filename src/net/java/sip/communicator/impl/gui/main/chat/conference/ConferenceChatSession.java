@@ -431,7 +431,16 @@ public class ConferenceChatSession
                     chatParticipants.add(chatContact);
                     sessionRenderer.addChatContact(chatContact);
             }
-
+            
+            ChatRoom chatRoom = chatRoomWrapper.getChatRoom();
+            if(chatRoom.findCachedConferenceDescription(
+                chatContact.getName()) != null)
+            {
+                ConferenceDescription cd
+                    = chatRoom.removeCachedConferenceDescription(
+                        chatContact.getName());
+                addChatConference(sourceChatRoom, chatRoomMember, cd);
+            }
             /*
              * When the whole list of members of a given chat room is reported,
              * it doesn't make sense to see "ChatContact has joined #ChatRoom"
@@ -664,6 +673,23 @@ public class ConferenceChatSession
      */
     public void conferencePublished(final ChatRoomConferencePublishedEvent evt)
     {
+        if(!evt.getChatRoom().equals(chatRoomWrapper.getChatRoom()))
+            return;
+        addChatConference(evt.getChatRoom(), evt.getMember(),
+            evt.getConferenceDescription());
+    }
+    
+    /**
+     * Adds the announced conference to the interface.
+     * 
+     * @param chatRoom the chat room where the conference is announced.
+     * @param chatRoomMember the chat room member who announced the conference.
+     * @param cd the <tt>ConferenceDescription</tt> instance which represents 
+     * the conference.
+     */
+    public void addChatConference(final ChatRoom chatRoom, 
+        final ChatRoomMember chatRoomMember, final ConferenceDescription cd)
+    {
         if(!SwingUtilities.isEventDispatchThread())
         {
             SwingUtilities.invokeLater(new Runnable()
@@ -671,19 +697,12 @@ public class ConferenceChatSession
                 @Override
                 public void run()
                 {
-                    conferencePublished(evt);
+                    addChatConference(chatRoom, chatRoomMember, cd);
                 }
             });
             return;
         }
-
-        ChatRoom chatRoom = evt.getChatRoom();
-        ChatRoomMember chatRoomMember = evt.getMember();
-
-        // the event is not for our room
-        if(!chatRoom.equals(chatRoomWrapper.getChatRoom()))
-            return;
-
+        
         for (ChatContact<?> chatContact : chatParticipants)
         {
             if(chatContact.getDescriptor().equals(chatRoomMember))
@@ -695,12 +714,22 @@ public class ConferenceChatSession
                  */
                 sessionRenderer.updateChatContactStatus(
                         chatContact, "published a conference " +
-                        evt.getConferenceDescription());
+                        cd);
+                
                 chatRoomMember.
-                        setConferenceDescription(evt.getConferenceDescription());
+                        setConferenceDescription(cd);
 
                 break;
             }
+        }
+        
+        if(cd.isAvailable())
+        {
+            sessionRenderer.addChatConferenceCall(cd);
+        }
+        else
+        {
+            sessionRenderer.removeChatConferenceCall(cd);
         }
     }
 }
