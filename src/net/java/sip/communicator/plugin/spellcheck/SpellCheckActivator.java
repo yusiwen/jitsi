@@ -24,15 +24,21 @@ import javax.swing.*;
 public class SpellCheckActivator
     extends AbstractServiceDependentActivator
 {
-    static BundleContext bundleContext;
+    /**
+     * Our Logger.
+     */
+    private static final Logger logger = Logger
+            .getLogger(SpellCheckActivator.class);
 
-    private SpellChecker checker = null;
+    static BundleContext bundleContext;
 
     private static UIService uiService;
 
     private static FileAccessService faService;
 
     private static ConfigurationService configService;
+
+    private static SpellChecker checker = null;
 
     /**
      * Called when this bundle is started.
@@ -75,7 +81,7 @@ public class SpellCheckActivator
                     }
                     catch(Throwable t)
                     {
-                        t.printStackTrace();
+                        logger.error("Error creating LanguageMenuBar", t);
                     }
 
                     return null;
@@ -122,21 +128,24 @@ public class SpellCheckActivator
 
         public void run()
         {
-            if(SpellCheckActivator.this.checker == null)
+            synchronized(SpellCheckActivator.this)
             {
-                SpellCheckActivator.this.checker = new SpellChecker();
-                try
+                if(checker == null)
                 {
-                    SpellCheckActivator.this.checker.start(bundleContext);
-                }
-                catch(Exception ex)
-                {
-                    ex.printStackTrace();
+                    checker = new SpellChecker();
                 }
             }
+
+            try
+            {
+                checker.start(bundleContext);
+            }
+            catch(Exception ex)
+            {
+                logger.error("Error starting SpellChecker", ex);
+            }
             menuBar = new LanguageMenuBar(checker, parentFactory);
-            menuBar.createSpellCheckerWorker(
-                SpellCheckActivator.this.checker.getLocale()).start();
+            menuBar.createSpellCheckerWorker(checker.getLocale()).start();
         }
     }
 
@@ -203,7 +212,5 @@ public class SpellCheckActivator
      */
     public void stop(BundleContext arg0) throws Exception
     {
-        if(this.checker != null)
-            this.checker.stop();
     }
 }

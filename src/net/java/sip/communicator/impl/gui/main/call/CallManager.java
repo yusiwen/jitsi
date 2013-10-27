@@ -7,6 +7,7 @@
 package net.java.sip.communicator.impl.gui.main.call;
 
 import java.awt.*;
+import java.lang.ref.*;
 import java.text.*;
 import java.util.*;
 import java.util.List;
@@ -44,6 +45,7 @@ import org.jitsi.util.*;
  *
  * @author Yana Stamcheva
  * @author Lyubomir Marinov
+ * @author Boris Grozev
  */
 public class CallManager
 {
@@ -93,6 +95,33 @@ public class CallManager
         extends SwingCallListener
     {
         /**
+         * Maps for incoming call handlers. The handlers needs to be created
+         * in the protocol thread while their method
+         * incomingCallReceivedInEventDispatchThread will be called on EDT.
+         * On the protocol thread a call state changed listener is added,
+         * if this is done on the EDT there is a almost no gap between incoming
+         * CallEvent and call state changed when doing auto answer and we
+         * end up with call answered and dialog for incoming call.
+         */
+        private Map<CallEvent,WeakReference<IncomingCallHandler>>
+            inCallHandlers = Collections.synchronizedMap(
+                new WeakHashMap<CallEvent,
+                                WeakReference<IncomingCallHandler>>());
+
+        /**
+         * Delivers the <tt>CallEvent</tt> in the protocol thread.
+         */
+        public void incomingCallReceived(CallEvent ev)
+        {
+            inCallHandlers.put(
+                ev,
+                new WeakReference<IncomingCallHandler>(
+                        new IncomingCallHandler(ev.getSourceCall())));
+
+            super.incomingCallReceived(ev);
+        }
+
+        /**
          * Implements {@link CallListener#incomingCallReceived(CallEvent)}. When
          * a call is received, creates a <tt>ReceivedCallDialog</tt> and plays
          * the ring phone sound to the user.
@@ -102,95 +131,13 @@ public class CallManager
         @Override
         public void incomingCallReceivedInEventDispatchThread(CallEvent ev)
         {
-            Call sourceCall = ev.getSourceCall();
-            boolean isVideoCall
-                = ev.isVideoCall()
-                    && ConfigurationUtils.hasEnabledVideoFormat(
-                            sourceCall.getProtocolProvider());
-            final ReceivedCallDialog receivedCallDialog
-                = new ReceivedCallDialog(
-                        sourceCall,
-                        isVideoCall,
-                        (CallManager.getInProgressCalls().size() > 0));
+            WeakReference<IncomingCallHandler> ihRef
+                = inCallHandlers.remove(ev);
 
-            receivedCallDialog.setVisible(true);
-
-            Iterator<? extends CallPeer> peerIter = sourceCall.getCallPeers();
-
-            if(!peerIter.hasNext())
+            if(ihRef != null)
             {
-                if (receivedCallDialog.isVisible())
-                    receivedCallDialog.setVisible(false);
-                return;
+                ihRef.get().incomingCallReceivedInEventDispatchThread(ev);
             }
-
-            final String peerName = peerIter.next().getDisplayName();
-            final long callTime = System.currentTimeMillis();
-
-            sourceCall.addCallChangeListener(new CallChangeAdapter()
-            {
-                @Override
-                public void callStateChanged(final CallChangeEvent ev)
-                {
-                    if(!SwingUtilities.isEventDispatchThread())
-                    {
-                        SwingUtilities.invokeLater(
-                                new Runnable()
-                                {
-                                    public void run()
-                                    {
-                                        callStateChanged(ev);
-                                    }
-                                });
-                        return;
-                    }
-                    if (!CallChangeEvent.CALL_STATE_CHANGE
-                            .equals(ev.getPropertyName()))
-                        return;
-
-                    // When the call state changes, we ensure here that the
-                    // received call notification dialog is closed.
-                    if (receivedCallDialog.isVisible())
-                        receivedCallDialog.setVisible(false);
-
-                    // Ensure that the CallDialog is created, because it is the
-                    // one that listens for CallPeers.
-                    Object newValue = ev.getNewValue();
-                    Call call = ev.getSourceCall();
-
-                    if (CallState.CALL_INITIALIZATION.equals(newValue)
-                            || CallState.CALL_IN_PROGRESS.equals(newValue))
-                    {
-                        openCallContainerIfNecessary(call);
-                    }
-                    else if (CallState.CALL_ENDED.equals(newValue))
-                    {
-                        if (ev.getOldValue().equals(
-                                CallState.CALL_INITIALIZATION))
-                        {
-                            // If the call was answered elsewhere, don't mark it
-                            // as missed.
-                            CallPeerChangeEvent cause = ev.getCause();
-
-                            if ((cause == null)
-                                    || (cause.getReasonCode()
-                                            != CallPeerChangeEvent
-                                                    .NORMAL_CALL_CLEARING))
-                            {
-                                addMissedCallNotification(peerName, callTime);
-                            }
-                        }
-
-                        call.removeCallChangeListener(this);
-                    }
-                }
-            });
-
-            /*
-             * Notify the existing CallPanels about the CallEvent (in case they
-             * need to update their UI, for example).
-             */
-            forwardCallEventToCallPanels(ev);
         }
 
         /**
@@ -239,6 +186,142 @@ public class CallManager
             Call sourceCall = ev.getSourceCall();
 
             openCallContainerIfNecessary(sourceCall);
+
+            /*
+             * Notify the existing CallPanels about the CallEvent (in case they
+             * need to update their UI, for example).
+             */
+            forwardCallEventToCallPanels(ev);
+        }
+    }
+
+    /**
+     * Handles incoming calls. Must be created on the protocol thread while the
+     * method incomingCallReceivedInEventDispatchThread is executed on the EDT.
+     */
+    private static class IncomingCallHandler
+        extends CallChangeAdapter
+    {
+        /**
+         * The dialog shown
+         */
+        private ReceivedCallDialog receivedCallDialog;
+
+        /**
+         * Peer name.
+         */
+        private String peerName;
+
+        /**
+         * The time of the incoming call.
+         */
+        private long callTime;
+
+        /**
+         * Construct
+         * @param sourceCall
+         */
+        IncomingCallHandler(Call sourceCall)
+        {
+            Iterator<? extends CallPeer> peerIter = sourceCall.getCallPeers();
+
+            if(!peerIter.hasNext())
+            {
+                return;
+            }
+
+            peerName = peerIter.next().getDisplayName();
+            callTime = System.currentTimeMillis();
+
+            sourceCall.addCallChangeListener(this);
+        }
+
+        /**
+         * State has changed.
+         * @param ev
+         */
+        @Override
+        public void callStateChanged(final CallChangeEvent ev)
+        {
+            if(!SwingUtilities.isEventDispatchThread())
+            {
+                SwingUtilities.invokeLater(
+                        new Runnable()
+                        {
+                            public void run()
+                            {
+                                callStateChanged(ev);
+                            }
+                        });
+                return;
+            }
+            if (!CallChangeEvent.CALL_STATE_CHANGE
+                    .equals(ev.getPropertyName()))
+                return;
+
+            // When the call state changes, we ensure here that the
+            // received call notification dialog is closed.
+            if (receivedCallDialog != null && receivedCallDialog.isVisible())
+                receivedCallDialog.setVisible(false);
+
+            // Ensure that the CallDialog is created, because it is the
+            // one that listens for CallPeers.
+            Object newValue = ev.getNewValue();
+            Call call = ev.getSourceCall();
+
+            if (CallState.CALL_INITIALIZATION.equals(newValue)
+                    || CallState.CALL_IN_PROGRESS.equals(newValue))
+            {
+                openCallContainerIfNecessary(call);
+            }
+            else if (CallState.CALL_ENDED.equals(newValue))
+            {
+                if (ev.getOldValue().equals(
+                        CallState.CALL_INITIALIZATION))
+                {
+                    // If the call was answered elsewhere, don't mark it
+                    // as missed.
+                    CallPeerChangeEvent cause = ev.getCause();
+
+                    if ((cause == null)
+                            || (cause.getReasonCode()
+                                    != CallPeerChangeEvent
+                                            .NORMAL_CALL_CLEARING))
+                    {
+                        addMissedCallNotification(peerName, callTime);
+                    }
+                }
+
+                call.removeCallChangeListener(this);
+            }
+        }
+
+        /**
+         * Executed on EDT cause will create dialog and will show it.
+         * @param ev
+         */
+        public void incomingCallReceivedInEventDispatchThread(CallEvent ev)
+        {
+            Call sourceCall = ev.getSourceCall();
+            boolean isVideoCall
+                = ev.isVideoCall()
+                    && ConfigurationUtils.hasEnabledVideoFormat(
+                            sourceCall.getProtocolProvider());
+            receivedCallDialog = new ReceivedCallDialog(
+                sourceCall,
+                isVideoCall,
+                (CallManager.getInProgressCalls().size() > 0));
+
+            receivedCallDialog.setVisible(true);
+
+            Iterator<? extends CallPeer> peerIter = sourceCall.getCallPeers();
+
+            if(!peerIter.hasNext())
+            {
+                if (receivedCallDialog.isVisible())
+                    receivedCallDialog.setVisible(false);
+                return;
+            }
 
             /*
              * Notify the existing CallPanels about the CallEvent (in case they
@@ -371,7 +454,7 @@ public class CallManager
                                     UIContactImpl uiContact)
     {
         new CreateCallThread(protocolProvider, null, null, uiContact,
-            contact, false /* audio-only */).start();
+            contact, null, null, false /* audio-only */).start();
     }
 
     /**
@@ -399,7 +482,7 @@ public class CallManager
                                         UIContactImpl uiContact)
     {
         new CreateCallThread(protocolProvider, null, null, uiContact,
-            contact, true /* video */).start();
+            contact, null, null, true /* video */).start();
     }
 
     /**
@@ -2244,11 +2327,21 @@ public class CallManager
         private final String stringContact;
 
         /**
+         * The description of a conference to call, if any.
+         */
+        private final ConferenceDescription conferenceDescription;
+
+        /**
          * The indicator which determines whether this instance is to create a
          * new video (as opposed to audio-only) <tt>Call</tt>.
          */
         private final boolean video;
 
+        /**
+         * The chat room associated with the call.
+         */
+        private final ChatRoom chatRoom;
+        
         /**
          * Creates an instance of <tt>CreateCallThread</tt>.
          *
@@ -2265,7 +2358,8 @@ public class CallManager
                 ContactResource contactResource,
                 boolean video)
         {
-            this(protocolProvider, contact, contactResource, null, null, video);
+            this(protocolProvider, contact, contactResource, null, null, null,
+                null, video);
         }
 
         /**
@@ -2281,7 +2375,27 @@ public class CallManager
                 String contact,
                 boolean video)
         {
-            this(protocolProvider, null, null, null, contact, video);
+            this(protocolProvider, null, null, null, contact, null, null, video);
+        }
+
+        /**
+         * Initializes a new <tt>CreateCallThread</tt> instance which is to
+         * create a new <tt>Call</tt> to a conference specified via a
+         * <tt>ConferenceDescription</tt>.
+         * @param protocolProvider the <tt>ProtocolProviderService</tt> which is
+         * to perform the establishment of the new <tt>Call</tt>.
+         * @param conferenceDescription the description of the conference to
+         * call.
+         * @param chatRoom the chat room associated with the call.
+         */
+        public CreateCallThread(
+                ProtocolProviderService protocolProvider,
+                ConferenceDescription conferenceDescription,
+                ChatRoom chatRoom)
+        {
+            this(protocolProvider, null, null, null, null,
+                    conferenceDescription, chatRoom,
+                    false /* video */);
         }
 
         /**
@@ -2302,6 +2416,8 @@ public class CallManager
          * @param stringContact the string to call
          * @param video <tt>true</tt> if this instance is to create a new video
          * (as opposed to audio-only) <tt>Call</tt>
+         * @param conferenceDescription the description of a conference to call
+         * @param chatRoom the chat room associated with the call.
          */
         public CreateCallThread(
                 ProtocolProviderService protocolProvider,
@@ -2309,6 +2425,8 @@ public class CallManager
                 ContactResource contactResource,
                 UIContactImpl uiContact,
                 String stringContact,
+                ConferenceDescription conferenceDescription,
+                ChatRoom chatRoom,
                 boolean video)
         {
             this.protocolProvider = protocolProvider;
@@ -2317,6 +2435,8 @@ public class CallManager
             this.uiContact = uiContact;
             this.stringContact = stringContact;
             this.video = video;
+            this.conferenceDescription = conferenceDescription;
+            this.chatRoom = chatRoom;
         }
 
         @Override
@@ -2373,25 +2493,38 @@ public class CallManager
                     contact = null;
                 }
 
-                stringContact = PhoneNumberI18nService.normalize(stringContact);
+                if (stringContact != null)
+                {
+                    stringContact
+                            = PhoneNumberI18nService.normalize(stringContact);
+                }
             }
 
             try
             {
-                if (video)
+                if (conferenceDescription != null)
                 {
-                    internalCallVideo(  protocolProvider,
-                                        contact,
-                                        uiContact,
-                                        stringContact);
+                    internalCall(  protocolProvider,
+                                   conferenceDescription,
+                                   chatRoom);
                 }
                 else
                 {
-                    internalCall(   protocolProvider,
-                                    contact,
-                                    stringContact,
-                                    contactResource,
-                                    uiContact);
+                    if (video)
+                    {
+                        internalCallVideo(  protocolProvider,
+                                            contact,
+                                            uiContact,
+                                            stringContact);
+                    }
+                    else
+                    {
+                        internalCall(   protocolProvider,
+                                        contact,
+                                        stringContact,
+                                        contactResource,
+                                        uiContact);
+                    }
                 }
             }
             catch (Throwable t)
@@ -2510,6 +2643,29 @@ public class CallManager
 
         if (uiContact != null && createdCall != null)
             addUIContactCall(uiContact, createdCall);
+    }
+
+    /**
+     * Creates a call through the given <tt>protocolProvider</tt>.
+     *
+     * @param protocolProvider the <tt>ProtocolProviderService</tt> through
+     * which to make the call
+     * @param conferenceDescription the description of the conference to call
+     * @param chatRoom the chat room associated with the call.
+     */
+    private static void internalCall(ProtocolProviderService protocolProvider,
+                                     ConferenceDescription conferenceDescription,
+                                     ChatRoom chatRoom)
+            throws OperationFailedException
+    {
+        OperationSetBasicTelephony<?> telephony
+                = protocolProvider.getOperationSet(
+                OperationSetBasicTelephony.class);
+
+        if (telephony != null)
+        {
+            telephony.createCall(conferenceDescription, chatRoom);
+        }
     }
 
     /**
@@ -3563,6 +3719,23 @@ public class CallManager
                     contactResource,
                     isVideo).start();
         }
+    }
+
+    /**
+     * Creates a call to the conference described in
+     * <tt>conferenceDescription</tt> through <tt>protocolProvider</tt>
+     *
+     * @param protocolProvider the protocol provider through which to create
+     * the call
+     * @param conferenceDescription the description of the conference to call
+     * @param chatRoom the chat room associated with the call.
+     */
+    public static void call(ProtocolProviderService protocolProvider,
+                            ConferenceDescription conferenceDescription,
+                            ChatRoom chatRoom)
+    {
+        new CreateCallThread(protocolProvider, conferenceDescription, chatRoom)
+            .start();
     }
 
     /**

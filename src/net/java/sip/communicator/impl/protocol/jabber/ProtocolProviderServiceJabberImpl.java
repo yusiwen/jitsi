@@ -2301,6 +2301,9 @@ public class ProtocolProviderServiceJabberImpl
 
         try
         {
+            if(discoveryManager == null)
+                return isFeatureListSupported;
+
             DiscoverInfo featureInfo =
                 discoveryManager.discoverInfoNonBlocking(jid);
 
@@ -2367,7 +2370,8 @@ public class ProtocolProviderServiceJabberImpl
     {
         XMPPConnection connection = getConnection();
 
-        if (connection != null)
+        // when we are not connected there is no full jid
+        if (connection != null && connection.isConnected())
         {
             Roster roster = connection.getRoster();
 
@@ -2775,6 +2779,13 @@ public class ProtocolProviderServiceJabberImpl
             }
             catch (XMPPException xmppe)
             {
+                if (logger.isDebugEnabled())
+                {
+                    logger.debug(
+                            "Failed to discover the items associated with"
+                                + " Jabber entity: " + serviceName,
+                            xmppe);
+                }
             }
             if (discoverItems != null)
             {
@@ -2793,6 +2804,10 @@ public class ProtocolProviderServiceJabberImpl
                     }
                     catch (XMPPException xmppe)
                     {
+                        logger.warn(
+                                "Failed to discover information about Jabber"
+                                    + " entity: " + entityID,
+                                xmppe);
                     }
                     if ((discoverInfo != null)
                             && discoverInfo.containsFeature(

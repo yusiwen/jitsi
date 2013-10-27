@@ -172,7 +172,7 @@ public class ContactListTreeCellRenderer
     /**
      * The web button.
      */
-    private final SIPCommButton webButton = new SIPCommButton();
+    private final WebButton webButton = new WebButton();
 
     /**
      * The add contact button.
@@ -906,8 +906,20 @@ public class ContactListTreeCellRenderer
         //webButton
         if (uiContact.getDescriptor() instanceof MetaContact)
         {
-            if(containsWebPageDetail(uiContact))
+            // first check for web page detail
+            WebDetailsListener webDetailsListener =
+                new WebDetailsListener(treeNode, webButton, uiContact);
+
+            List<WebPageDetail> dets =
+                getWebPageDetails(uiContact, webDetailsListener, true);
+            if(dets != null && dets.size() > 0)
+            {
                 x += addButton(webButton, ++gridX, x, false);
+
+                webButton.setLinks(dets);
+            }
+            else
+                webButton.setLinks(null);
         }
 
         // The list of the contact actions
@@ -1526,19 +1538,6 @@ public class ContactListTreeCellRenderer
     }
 
     /**
-     * Checks for existence of at least single web page detail.
-     * @param uiContact the contact to check
-     * @return true if at least one detail available, false otherwise.
-     */
-    private boolean containsWebPageDetail(UIContact uiContact)
-    {
-        WebDetailsListener webDetailsListener =
-            new WebDetailsListener(treeNode, webButton, uiContact);
-
-        return getWebPageDetails(uiContact, webDetailsListener, true) != null;
-    }
-
-    /**
      * Retrieves all web page details for the supplied uiContact.
      * @param uiContact the contacts
      * @param webDetailsListener the listener to wait for details retrieval,
@@ -1567,9 +1566,14 @@ public class ContactListTreeCellRenderer
                 = contact.getProtocolProvider().getOperationSet(
                     OperationSetServerStoredContactInfo.class);
 
-            Iterator<GenericDetail> iter =
-                opset.requestAllDetailsForContact(
+            Iterator<GenericDetail> iter = null;
+            try
+            {
+                iter = opset.requestAllDetailsForContact(
                     contact, webDetailsListener);
+            }
+            catch(Throwable t)
+            {}
 
             if(iter == null)
                 continue;
@@ -1893,5 +1897,55 @@ public class ContactListTreeCellRenderer
         ttManager.unregisterComponent(chatButton);
         ttManager.unregisterComponent(addContactButton);
         ttManager.unregisterComponent(webButton);
+    }
+
+    /**
+     * Web button contains one or several links that can be opened in default
+     * browser if clicked.
+     */
+    private class WebButton
+        extends SIPCommButton
+    {
+        /**
+         * The links used in this button.
+         */
+        private List<WebPageDetail> links;
+
+        /**
+         * Changes the links.
+         * @param links
+         */
+        private void setLinks(List<WebPageDetail> links)
+        {
+            this.links = links;
+        }
+
+        /**
+         * Returns the custom tooltip.
+         * @returns the custom tooltip.
+         */
+        public ExtendedTooltip getTooltip()
+        {
+            if(links == null)
+                return null;
+
+            // create a custom button tooltip to show the available links
+            ExtendedTooltip tip = new ExtendedTooltip(true);
+            tip.setTitle(webButton.getToolTipText());
+
+            for(WebPageDetail wd : links)
+            {
+                String displayStr = wd.getDetailValue().toString();
+                // do not display too long links
+                if(displayStr.length() > 60)
+                {
+                    displayStr = displayStr.substring(0, 60);
+                    displayStr += "...";
+                }
+                tip.addLine(null, displayStr);
+            }
+
+            return tip;
+        }
     }
 }
